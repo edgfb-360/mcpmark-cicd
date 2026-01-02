@@ -1,0 +1,24 @@
+name: Test Label Creation
+
+permissions:
+  issues: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Create Label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'test-label',
+              color: 'ff0000',
+              description: 'Test label'
+            });
+            console.log('Test label created successfully!');
