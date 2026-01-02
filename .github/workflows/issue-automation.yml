@@ -151,8 +151,16 @@ jobs:
         with:
           script: |
             const { issue } = context.payload;
-            const issueLabels = issue.labels.map(l => l.name.toLowerCase());
+            const issueNumber = issue.number;
             const authorLogin = issue.user.login;
+
+            // Fetch current issue labels (since original payload doesn't have labels added by triage)
+            const { data: updatedIssue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            const issueLabels = updatedIssue.labels.map(l => l.name.toLowerCase());
 
             // 1. Check if first-time contributor in this repo
             const { data: userIssues } = await github.rest.issues.listForRepo({
@@ -167,7 +175,7 @@ jobs:
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
+                issue_number: issueNumber,
                 labels: ['first-time-contributor']
               });
             }
@@ -205,29 +213,34 @@ jobs:
 
             // 4. Set milestone for high/critical priority
             if (issueLabels.includes('priority-high') || issueLabels.includes('priority-critical')) {
-              await github.rest.issues.update({
+              // Fetch milestone again to get the number (in case we just created it)
+              const { data: updatedMilestones } = await github.rest.issues.listMilestonesForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
-                milestone: milestones.find(m => m.title === 'v1.0.0')?.number || (await github.rest.issues.listMilestonesForRepo({
+                state: 'all'
+              });
+              const v1Milestone = updatedMilestones.find(m => m.title === 'v1.0.0');
+              if (v1Milestone) {
+                await github.rest.issues.update({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  state: 'all'
-                })).data.find(m => m.title === 'v1.0.0').number
-              });
+                  issue_number: issueNumber,
+                  milestone: v1Milestone.number
+                });
+              }
             }
 
             // 5. Update status from needs-triage to needs-review
             await github.rest.issues.removeLabel({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issue.number,
+              issue_number: issueNumber,
               name: 'needs-triage'
             });
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issue.number,
+              issue_number: issueNumber,
               labels: ['needs-review']
             });
 
@@ -236,7 +249,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
+                issue_number: issueNumber,
                 body: responseMessage
               });
             }
