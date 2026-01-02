@@ -16,6 +16,41 @@ jobs:
             const title = issue.title.toLowerCase();
             const body = issue.body ? issue.body.toLowerCase() : '';
 
+            // Define all required labels with their colors and descriptions
+            const requiredLabels = [
+              // Category
+              { name: 'bug', color: 'd73a4a', description: 'Something isn\'t working' },
+              { name: 'enhancement', color: 'a2eeef', description: 'New feature or request' },
+              { name: 'epic', color: '0056ff', description: 'Large feature requiring multiple sub-tasks' },
+              { name: 'maintenance', color: 'fef2c0', description: 'Maintenance and housekeeping tasks' },
+              // Priority
+              { name: 'priority-critical', color: 'b60205', description: 'Critical priority issue' },
+              { name: 'priority-high', color: 'ff9f1c', description: 'High priority issue' },
+              { name: 'priority-medium', color: 'ffdd57', description: 'Medium priority issue' },
+              { name: 'priority-low', color: 'c2e0c6', description: 'Low priority issue' },
+              // Status
+              { name: 'needs-triage', color: 'fbca04', description: 'Needs to be reviewed by maintainers' },
+              { name: 'needs-review', color: '0075ca', description: 'Awaiting review from maintainers' },
+              { name: 'first-time-contributor', color: '1f883d', description: 'Issue created by first-time contributor' }
+            ];
+
+            // Create required labels if they don't exist
+            const { data: existingLabels } = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            for (const label of requiredLabels) {
+              if (!existingLabels.some(l => l.name === label.name)) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+              }
+            }
+
             // Determine category label
             let categoryLabel = null;
             if (title.includes('bug')) {
@@ -91,8 +126,8 @@ jobs:
             }
 
             // Update parent issue body with Epic Tasks checklist
-            const newBody = issue.body ? `${issue.body}\n\n` : '';
-            const epicTasksSection = `## Epic Tasks\n\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\n')}`;
+            const newBody = issue.body ? `${issue.body}\\n\\n` : '';
+            const epicTasksSection = `## Epic Tasks\\n\\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\\n')}`;
             const updatedBody = newBody + epicTasksSection;
 
             await github.rest.issues.update({
@@ -200,4 +235,4 @@ jobs:
                 issue_number: issue.number,
                 body: responseMessage
               });
-            }
+            }"
