@@ -95,15 +95,29 @@ jobs:
   task-breakdown:
     runs-on: ubuntu-latest
     needs: issue-triage
-    if: contains(github.event.issue.labels.*.name, 'epic')
     steps:
       - name: Create Epic Subtasks
         uses: actions/github-script@v7
         with:
           script: |
             const { issue } = context.payload;
-            const parentNumber = issue.number;
-            const originalTitle = issue.title;
+            const issueNumber = issue.number;
+
+            // Fetch current issue labels (since original payload doesn't have labels added by triage)
+            const { data: updatedIssue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+
+            // Only run if issue has epic label
+            if (!updatedIssue.labels.some(l => l.name === 'epic')) {
+              console.log('Issue does not have epic label, skipping subtask creation');
+              return;
+            }
+
+            const parentNumber = issueNumber;
+            const originalTitle = updatedIssue.title;
             const subtaskNames = [
               'Requirements Analysis',
               'Design and Architecture',
@@ -130,7 +144,7 @@ jobs:
             }
 
             // Update parent issue body with Epic Tasks checklist
-            const newBody = issue.body ? `${issue.body}\n\n` : '';
+            const newBody = updatedIssue.body ? `${updatedIssue.body}\n\n` : '';
             const epicTasksSection = `## Epic Tasks\n\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\n')}`;
             const updatedBody = newBody + epicTasksSection;
 
