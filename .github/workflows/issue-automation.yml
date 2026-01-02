@@ -126,8 +126,8 @@ jobs:
             }
 
             // Update parent issue body with Epic Tasks checklist
-            const newBody = issue.body ? `${issue.body}\\n\\n` : '';
-            const epicTasksSection = `## Epic Tasks\\n\\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\\n')}`;
+            const newBody = issue.body ? `${issue.body}\n\n` : '';
+            const epicTasksSection = `## Epic Tasks\n\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\n')}`;
             const updatedBody = newBody + epicTasksSection;
 
             await github.rest.issues.update({
@@ -235,4 +235,4 @@ jobs:
                 issue_number: issue.number,
                 body: responseMessage
               });
-            }"
+            }
