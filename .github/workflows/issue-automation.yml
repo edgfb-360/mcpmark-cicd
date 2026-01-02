@@ -1,5 +1,9 @@
 name: Issue Management Automation
 
+permissions:
+  issues: write
+  contents: read
+
 on:
   issues:
     types: [opened, labeled]
@@ -19,7 +23,7 @@ jobs:
             // Define all required labels with their colors and descriptions
             const requiredLabels = [
               // Category
-              { name: 'bug', color: 'd73a4a', description: 'Something isn\'t working' },
+              { name: 'bug', color: 'd73a4a', description: 'Something isn\\'t working' },
               { name: 'enhancement', color: 'a2eeef', description: 'New feature or request' },
               { name: 'epic', color: '0056ff', description: 'Large feature requiring multiple sub-tasks' },
               { name: 'maintenance', color: 'fef2c0', description: 'Maintenance and housekeeping tasks' },
@@ -126,8 +130,8 @@ jobs:
             }
 
             // Update parent issue body with Epic Tasks checklist
-            const newBody = issue.body ? `${issue.body}\n\n` : '';
-            const epicTasksSection = `## Epic Tasks\n\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\n')}`;
+            const newBody = issue.body ? `${issue.body}\\n\\n` : '';
+            const epicTasksSection = `## Epic Tasks\\n\\n${subtaskNumbers.map(num => `- [ ] #${num}`).join('\\n')}`;
             const updatedBody = newBody + epicTasksSection;
 
             await github.rest.issues.update({
